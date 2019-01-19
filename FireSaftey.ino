@@ -2,9 +2,6 @@
 #include "sensorsAndTypes.h"
 #include "MQTT.h"
 #include <ArduinoOTA.h>
-#include <Eventually.h>
-
-
 
 /*I take Main from config
 const char ssid[]  = "XXX";
@@ -18,7 +15,8 @@ const char complateOutTopic[] = "complateGateWayOut";
 const char complateTopic[] = "GateWayComplate";
 */
 
-MQTT *mqtt=new MQTT(mqtt_server, port,callback);
+MQTT *mqtt=new MQTT(mqtt_server, port, clientID);
+//MQTT *mqtt=new MQTT("181",45,"rpeo");
 
 int LED = 13;
 long arrayOfRfs[150];
@@ -36,43 +34,10 @@ void setup()
     Serial.begin(115200);
     pinMode(LED, OUTPUT);
 
-    
+    OTA();
 
     timer_last_keep_ALIVE = millis() - 1800001;
 
-    //OTA
-    ArduinoOTA
-        .onStart([]() {
-            String type;
-            if (ArduinoOTA.getCommand() == U_FLASH)
-                type = "sketch";
-            else // U_SPIFFS
-                type = "filesystem";
-
-            // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
-            Serial.println("Start updating " + type);
-        })
-        .onEnd([]() {
-            Serial.println("\nEnd");
-        })
-        .onProgress([](unsigned int progress, unsigned int total) {
-            Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
-        })
-        .onError([](ota_error_t error) {
-            Serial.printf("Error[%u]: ", error);
-            if (error == OTA_AUTH_ERROR)
-                Serial.println("Auth Failed");
-            else if (error == OTA_BEGIN_ERROR)
-                Serial.println("Begin Failed");
-            else if (error == OTA_CONNECT_ERROR)
-                Serial.println("Connect Failed");
-            else if (error == OTA_RECEIVE_ERROR)
-                Serial.println("Receive Failed");
-            else if (error == OTA_END_ERROR)
-                Serial.println("End Failed");
-        });
-    ArduinoOTA.setHostname(clientID);
-    ArduinoOTA.begin();
 }
 
 void loop()
@@ -80,11 +45,11 @@ void loop()
 
     ArduinoOTA.handle();
 
-    if (!*mqtt->connected())
+    if (!mqtt->connected())
     {
-        *mqtt->reconnect();
+        mqtt->reconnect();
     }
-    *mqtt->clientloop();
+    mqtt->clientloop();
 
     
     if (monitoring)
@@ -93,7 +58,7 @@ void loop()
         SmokeFunction();
         Alarm(); //Activate alarm if applicable
         DebugMode();
-        *mqtt->MQTTOut();
+        mqtt->MQTTOut();
         delay(500);
     }
 }
@@ -166,7 +131,7 @@ void eventmethod(){
         //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-        StaticJsonBuffer<300> JSONbuffer;
+       /* StaticJsonBuffer<300> JSONbuffer;
         JsonObject &JSONencoder = JSONbuffer.createObject();
         JSONencoder["device"] = clientID;
         JSONencoder["freeSpeace"] = esp_get_free_heap_size();
@@ -190,5 +155,44 @@ void eventmethod(){
         Serial.println("Message Sent on topic: ");
         Serial.println(topic);
         Serial.println(message);
+        */
 
+}
+
+void OTA(){
+    
+    //OTA
+    ArduinoOTA
+        .onStart([]() {
+            String type;
+            if (ArduinoOTA.getCommand() == U_FLASH)
+                type = "sketch";
+            else // U_SPIFFS
+                type = "filesystem";
+
+            // NOTE: if updating SPIFFS this would be the place to unmount SPIFFS using SPIFFS.end()
+            Serial.println("Start updating " + type);
+        })
+        .onEnd([]() {
+            Serial.println("\nEnd");
+        })
+        .onProgress([](unsigned int progress, unsigned int total) {
+            Serial.printf("Progress: %u%%\r", (progress / (total / 100)));
+        })
+        .onError([](ota_error_t error) {
+            Serial.printf("Error[%u]: ", error);
+            if (error == OTA_AUTH_ERROR)
+                Serial.println("Auth Failed");
+            else if (error == OTA_BEGIN_ERROR)
+                Serial.println("Begin Failed");
+            else if (error == OTA_CONNECT_ERROR)
+                Serial.println("Connect Failed");
+            else if (error == OTA_RECEIVE_ERROR)
+                Serial.println("Receive Failed");
+            else if (error == OTA_END_ERROR)
+                Serial.println("End Failed");
+        });
+        
+    ArduinoOTA.setHostname(clientID);
+    ArduinoOTA.begin();
 }

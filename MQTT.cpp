@@ -2,24 +2,33 @@
 #include <PubSubClient.h>
 #include <ArduinoJson.h>
 #include <ESPmDNS.h>
-#include <WiFiUdp.h>
+//#include <WiFiUdp.h>
+#include <WiFi.h>
 #include "config.h"
 #include "sensorsAndTypes.h"
-#include <Events.h>
-#include <EventQueue.h>
-#include <EventDispatcher.h>
 
 #define MQTT_MAX_PACKET_SIZE 500 //dons't check it yet, but I think it will let you to send longer data to MQTT
+
+
 WiFiClient espClient;
 PubSubClient client(espClient);
-EvtManager mgr;
-USE_EVENTUALLY_LOOP(mgr);
-client : public;
-MQTT::MQTT()
+char *_clientID;
+class MQTT
 {
 
     int sizeofBuffer = 15; //sizeofBuffer = (sizeof(int) * SMOKEpinsLength) + (sizeof(int) * SMOKEpinsLength) + 60;
 
+    MQTT(char server[], int port, char clientID[])
+    {
+
+        //starting the wifi and the MQTT
+        setup_wifi();
+        client.setServer(server, port);
+        //client.setCallback(*callback);
+        _clientID = clientID;
+    }
+
+  public:
     void MQTTOut()
     {
         if (!client.connected())
@@ -31,7 +40,7 @@ MQTT::MQTT()
 
         DynamicJsonBuffer JSONbuffer;
         JsonObject &JSONencoder = JSONbuffer.createObject();
-        JSONencoder["device"] = clientID;
+        JSONencoder["device"] = _clientID;
         JSONencoder["fS"] = esp_get_free_heap_size();
         JsonArray &tempsStatus = JSONencoder.createNestedArray("t");
         JsonArray &humidsStatus = JSONencoder.createNestedArray("h");
@@ -113,7 +122,6 @@ MQTT::MQTT()
         delay(500);
         digitalWrite(2, LOW);
     }
-
     void reconnect()
     {
         // Loop until we're reconnected
@@ -125,7 +133,7 @@ MQTT::MQTT()
             digitalWrite(2, LOW);
             Serial.print("Attempting MQTT connection...");
             // Attempt to connect
-            if (client.connect(clientID))
+            if (client.connect(_clientID))
             {
                 Serial.println("connected");
                 client.subscribe(inTopic);
@@ -134,7 +142,7 @@ MQTT::MQTT()
             else
             {
                 client.setServer(mqtt_server, port);
-                if (client.connect(clientID))
+                if (client.connect(_clientID))
                 {
                     Serial.println("connected");
                     client.subscribe(inTopic);
@@ -160,25 +168,17 @@ MQTT::MQTT()
     {
         return client.connected();
     }
-    void clientloop()
+  void clientloop()
     {
         client.loop();
     }
-}
-void MQTT::MQTT()
-{
+  private:
+    void callback(char *topic, byte *payload, unsigned int length)
+    {
+        // Conver the incoming byte array to a string
+        payload[length] = '\0'; // Null terminator used to terminate the char array
+        char *message = (char *)payload;
 
-    //starting the wifi and the MQTT
-    *mqtt->setup_wifi();
-    client.setServer(mqtt_server, port);
-    client.setCallback(*callback);
-}
-void callback(char *topic, byte *payload, unsigned int length)
-{
-    // Conver the incoming byte array to a string
-    payload[length] = '\0'; // Null terminator used to terminate the char array
-    char *message = (char *)payload;
-
-    callbackmethod res = {topic, message};
-
-}
+        callbackmethod res = {topic, message};
+    }
+};
