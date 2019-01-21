@@ -2,6 +2,7 @@
 #include "sensorsAndTypes.h"
 #include "MQTT.h"
 #include <ArduinoOTA.h>
+#include <stdlib.h> // for malloc and free
 
 /*I take Main from config
 const char ssid[]  = "XXX";
@@ -15,7 +16,8 @@ const char complateOutTopic[] = "complateGateWayOut";
 const char complateTopic[] = "GateWayComplate";
 */
 
-MQTT *mqtt=new MQTT(mqtt_server, port, clientID);
+MQTT *mqtt;
+MQTT *mqtt2;
 //MQTT *mqtt=new MQTT("181",45,"rpeo");
 
 int LED = 13;
@@ -25,19 +27,18 @@ char msg[50];
 uint32_t FirstFreeSpeace = esp_get_free_heap_size();
 unsigned long timer_last_keep_ALIVE = 0;
 
-bool monitoring = false;
-
+bool monitoring = true;
 
 void setup()
 {
-
+    mqtt = new MQTT(mqtt_server, port, clientID);
+    mqtt2 = new MQTT(mqtt_server, port, "roeitest");
     Serial.begin(115200);
     pinMode(LED, OUTPUT);
 
     OTA();
 
     timer_last_keep_ALIVE = millis() - 1800001;
-
 }
 
 void loop()
@@ -51,14 +52,20 @@ void loop()
     }
     mqtt->clientloop();
 
-    
+if (!mqtt2->connected())
+    {
+        mqtt2->reconnect();
+    }
+    mqtt2->clientloop();
+
     if (monitoring)
     {
-        TempFunctions(); //Do the temp related stuff
-        SmokeFunction();
-        Alarm(); //Activate alarm if applicable
-        DebugMode();
+        //TempFunctions(); //Do the temp related stuff
+        //SmokeFunction();
+        //Alarm(); //Activate alarm if applicable
+        //DebugMode();
         mqtt->MQTTOut();
+        mqtt2->MQTTOut();
         delay(500);
     }
 }
@@ -66,21 +73,20 @@ void loop()
 void TempFunctions()
 {
     // READ array Temp
-    for (int i = 0; i <150 ; i++)
-    {       
+    for (int i = 0; i < 150; i++)
+    {
     }
 }
 void SmokeFunction()
 {
-      // READ array SMOKE
-        for (int i = 0; i < SMOKEpinsLength; i++)
+    // READ array SMOKE
+    for (int i = 0; i < SMOKEpinsLength; i++)
     {
-        
     }
 }
 
 void Alarm()
-{    
+{
     //checking the alarms
     /*
     for (int i = 0; i < SMOKEpinsLength; i++)
@@ -94,7 +100,7 @@ void Alarm()
 
 void DebugMode()
 {
-  /*  //temp:
+    /*  //temp:
     for (int i = 0; i < DHTpinsLength; i++)
     {
         Serial.print("Temperature ");
@@ -119,19 +125,17 @@ void DebugMode()
     };*/
 }
 
+void eventmethod()
+{
+    //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-
-void eventmethod(){
-        //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        //SHUT DOWN ENTIRE SYSTEM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-
-       /* StaticJsonBuffer<300> JSONbuffer;
+    /* StaticJsonBuffer<300> JSONbuffer;
         JsonObject &JSONencoder = JSONbuffer.createObject();
         JSONencoder["device"] = clientID;
         JSONencoder["freeSpeace"] = esp_get_free_heap_size();
@@ -156,11 +160,11 @@ void eventmethod(){
         Serial.println(topic);
         Serial.println(message);
         */
-
 }
 
-void OTA(){
-    
+void OTA()
+{
+
     //OTA
     ArduinoOTA
         .onStart([]() {
@@ -192,7 +196,7 @@ void OTA(){
             else if (error == OTA_END_ERROR)
                 Serial.println("End Failed");
         });
-        
+
     ArduinoOTA.setHostname(clientID);
     ArduinoOTA.begin();
 }
